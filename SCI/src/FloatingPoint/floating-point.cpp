@@ -1322,7 +1322,9 @@ vector<FixArray> quotient_mantissa(FixOp *fix, const vector<FixArray> &m1, const
   return q;
 }
 
-FPArray FPOp::modified_div(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
+FPArray FPOp::lyc_div(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
+    cout<<"lyc_div"<<endl;
+
     assert(x.party != PUBLIC && y.party != PUBLIC);
     assert(x.size == y.size);
     assert(x.e_bits == y.e_bits);
@@ -1338,12 +1340,47 @@ FPArray FPOp::modified_div(const FPArray &x, const FPArray &y, bool cheap_varien
     FixArray y_m, y_e;
     tie(y_s, y_z, y_m, y_e) = get_components(y);
 
-    FPArray ret;
-
      //TODO:
-     // 1. write the protocol on paper
+     // 1. (completed) write the original protocol for FPArray_with_FPArray
+     // 2. write the protocol on paper
      // 2. encode
      // 3. test
+
+    BoolArray msb_x_m = bool_op->NOT(x_z);
+
+    // e = e1 - e2  OR  e1 - e2 -1
+    // m1 = m1   OR   m1 * 2
+    // -------depending on {m1<m2}
+    BoolArray denormal_m = fix->LT(x_m, y_m);
+
+    FixArray ret_e = fix->sub(x_e, y_e);
+    ret_e = fix->add(ret_e, y.e_bias());
+    FixArray ret_e_if = fix->sub(ret_e, 1);
+    ret_e = fix->if_else(denormal_m, ret_e_if, ret_e);
+
+    x_m = fix->extend(x_m, y.m_bits + 3, msb_x_m.data);
+    FixArray x_m_if = fix->mul(x_m, 2, y.m_bits + 3);
+    x_m = fix->if_else(denormal_m, x_m_if, x_m);
+
+
+    // m = m1 / m2
+    vector<FixArray> x_m_vec(1);
+    x_m_vec[0] = x_m;
+    FixArray q = (quotient_mantissa(fix, x_m_vec, y_m, cheap_varient))[0];
+
+    // s = s1 xor s2
+    BoolArray ret_s = bool_op->XOR(x_s, y_s);
+
+    // z = z1
+    BoolArray ret_z = x_z;
+
+
+    FPArray ret = this->input(this->party, x.size, ret_s.data, ret_z.data,
+                                   q.data, ret_e.data, y.m_bits, y.e_bits);
+
+    if (check_bounds) {
+        ret = this->check_bounds(ret);
+    }
 
     return  ret;
 }
