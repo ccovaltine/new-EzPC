@@ -147,7 +147,7 @@ void test_op() {
     for (int i = 0; i < sz; i++) {
       f[i] = f_1[i] / f_2[i];
     }
-    fp = fp_op->lyc_div_modified(fp_1, fp_2);
+    fp = fp_op->lyc_div_seperated(fp_1, fp_2);
     break;
   case Op::SQRT:
     cout << "SQRT" << endl;

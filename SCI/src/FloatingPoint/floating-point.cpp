@@ -1386,7 +1386,7 @@ FPArray FPOp::lyc_div(const FPArray &x, const FPArray &y, bool cheap_varient, bo
     return  ret;
 }
 
-FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
+FPArray FPOp::lyc_div_seperated(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
     cout<<"lyc_div_modified"<<endl;
 
     assert(x.party != PUBLIC && y.party != PUBLIC);
@@ -1421,7 +1421,7 @@ FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_va
     FixArray x_m_if = fix->mul(x_m, 2, y.m_bits + 3);
     x_m = fix->if_else(denormal_m, x_m_if, x_m);
 
-    //TODO:
+    //things:
     // 1. compute  1/m2
     // 2. compute m = m1 * (1/m2)
     // 3. validate whether m = m1/m2

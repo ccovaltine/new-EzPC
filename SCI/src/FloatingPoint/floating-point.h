@@ -447,6 +447,8 @@ public:
 
   FPArray lyc_div(const FPArray &x, const FPArray &y, bool cheap_varient = false, bool check_bounds = true);
 
+  FPArray lyc_div_seperated(const FPArray &x, const FPArray &y, bool cheap_varient = false, bool check_bounds = true);
+
   FPArray lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_varient = false, bool check_bounds = true);
 
 
