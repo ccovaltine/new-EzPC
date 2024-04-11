@@ -1,0 +1,13 @@
+# Build Directory
+mpc_venv
+# Vim c_tags files
+c_*
+*.onnx
+.idea/
+.vscode/
+*.dat
+*Zone.Identifier
+*.zip
+*.dot
+*.csv
+*.out
