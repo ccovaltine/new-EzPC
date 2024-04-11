@@ -447,6 +447,9 @@ public:
 
   FPArray lyc_div(const FPArray &x, const FPArray &y, bool cheap_varient = false, bool check_bounds = true);
 
+  FPArray lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_varient = false, bool check_bounds = true);
+
+
   // Square-Root: returns sqrt(x[i])
   // x must be secret-shared
   FPArray sqrt(const FPArray &x);

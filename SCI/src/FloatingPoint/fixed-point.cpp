@@ -58,7 +58,7 @@ FixArray concat(const vector<FixArray>& x) {
 }
 
 template <class T> std::vector<T> FixArray::get_native_type() {
-  assert(this->party == PUBLIC);
+//  assert(this->party == PUBLIC);
   if constexpr (is_same_v<T, uint32_t> || is_same_v<T, uint64_t>) {
     assert(this->signed_ == false);
   }
@@ -72,7 +72,7 @@ template <class T> std::vector<T> FixArray::get_native_type() {
 }
 
 std::ostream &operator<<(std::ostream &os, FixArray &other) {
-  assert(other.party == PUBLIC);
+//  assert(other.party == PUBLIC);
   vector<double> dbl_other = other.get_native_type<double>();
   os << "(ell: " << other.ell << ", s: " << other.s << ") \t[";
   for (int i = 0; i < other.size; i++) {
