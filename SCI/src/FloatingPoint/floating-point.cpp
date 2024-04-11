@@ -1387,7 +1387,7 @@ FPArray FPOp::lyc_div(const FPArray &x, const FPArray &y, bool cheap_varient, bo
 }
 
 FPArray FPOp::lyc_div_seperated(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
-    cout<<"lyc_div_modified"<<endl;
+    cout<<"lyc_div_seperated"<<endl;
 
     assert(x.party != PUBLIC && y.party != PUBLIC);
     assert(x.size == y.size);
@@ -1444,7 +1444,97 @@ FPArray FPOp::lyc_div_seperated(const FPArray &x, const FPArray &y, bool cheap_v
     // 3
     vector<FixArray> x_m_vec(1);
     x_m_vec[0] = x_m;
-    FixArray rq = (quotient_mantissa(fix, x_m_vec, y_m, cheap_varient))[0];
+    FixArray rq = x_m;
+    rq = (quotient_mantissa(fix, x_m_vec, y_m, cheap_varient))[0];
+    FixArray rq_pub = fix->output(PUBLIC, rq);
+    cout << "rq=m1/m2:\t" << rq_pub << endl;
+
+    // s = s1 xor s2
+    BoolArray ret_s = bool_op->XOR(x_s, y_s);
+
+    // z = z1
+    BoolArray ret_z = x_z;
+
+
+    FPArray ret = this->input(this->party, x.size, ret_s.data, ret_z.data,
+                              q.data, ret_e.data, y.m_bits, y.e_bits);
+
+    if (check_bounds) {
+        ret = this->check_bounds(ret);
+    }
+
+    return  ret;
+}
+
+FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_varient, bool check_bounds) {
+    cout<<"lyc_div_modified"<<endl;
+
+    assert(x.party != PUBLIC && y.party != PUBLIC);
+    assert(x.size == y.size);
+    assert(x.e_bits == y.e_bits);
+    assert(x.m_bits == y.m_bits);
+
+    int n = x.size; //how many floating-point numbers in the FPArray
+
+    BoolArray x_s, x_z;
+    FixArray x_m, x_e;
+    tie(x_s, x_z, x_m, x_e) = get_components(x);
+
+    BoolArray y_s, y_z;
+    FixArray y_m, y_e;
+    tie(y_s, y_z, y_m, y_e) = get_components(y);
+
+
+    BoolArray msb_x_m = bool_op->NOT(x_z);
+
+    // e = e1 - e2  OR  e1 - e2 -1
+    // m1 = m1   OR   m1 * 2
+    // -------depending on {m1<m2}
+    BoolArray denormal_m = fix->LT(x_m, y_m);
+
+    FixArray ret_e = fix->sub(x_e, y_e);
+    ret_e = fix->add(ret_e, y.e_bias());
+    FixArray ret_e_if = fix->sub(ret_e, 1);
+    ret_e = fix->if_else(denormal_m, ret_e_if, ret_e);
+
+    x_m = fix->extend(x_m, y.m_bits + 3, msb_x_m.data);
+    FixArray x_m_if = fix->mul(x_m, 2, y.m_bits + 3);
+    x_m = fix->if_else(denormal_m, x_m_if, x_m);
+
+    //things:
+    // 1. compute  1/m2
+    // 2. compute m = m1 * (1/m2)
+    // 3. validate whether m = m1/m2
+
+    // 1
+    //TODO:
+    // 1. generate random RHO
+    // 2. (?) secret share RHO between ALICE and BOB
+    // 3. (fix->mult) ALPHA = RHO * m2
+    // 4. (fix->output) ALPHA -> PUBLIC
+    // 5. (locally) (RHO.share.get_native_type<float>()) / (ALPHA.share.get_native_type<float>())
+    // 6. (?) assign the upper result as secret share respectively
+
+
+    vector<FixArray> num_1_vec(1);
+    FixArray num_1_fix = fix->input(x_m.party, y_m.size, (1<<(y_m.s-1)), false, y_m.ell + 2, y_m.s);
+    cout << "num_1_fix:\t" << num_1_fix << endl;
+    cout << "m2:\t" << y_m << endl;
+    num_1_vec[0] = num_1_fix;
+    FixArray r = (quotient_mantissa(fix, num_1_vec, y_m, cheap_varient))[0];
+    FixArray r_pub = fix->output(PUBLIC, r);
+    cout << "r=1/m2:\t" << r_pub << endl;
+
+    // 2
+    FixArray q = fix->mul(r, x_m);
+    FixArray q_pub = fix->output(PUBLIC, q);
+    cout << "q=m1*r:\t" << q_pub << endl;
+
+    // 3
+    vector<FixArray> x_m_vec(1);
+    x_m_vec[0] = x_m;
+    FixArray rq = x_m;
+    rq = (quotient_mantissa(fix, x_m_vec, y_m, cheap_varient))[0];
     FixArray rq_pub = fix->output(PUBLIC, rq);
     cout << "rq=m1/m2:\t" << rq_pub << endl;
 
