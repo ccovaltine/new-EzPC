@@ -1324,7 +1324,7 @@ vector<FixArray> quotient_mantissa(FixOp *fix, const vector<FixArray> &m1, const
 
     //TODO:
     // 1. (completed) write the original protocol for FPArray_with_FPArray
-    // 2. write the protocol on paper
+    // 2. (completed) write the protocol on paper
     // 2. encode
     // 3. test
 
@@ -1509,7 +1509,7 @@ FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_va
     // 3. validate whether m = m1/m2
 
     // 1
-    //TODO:
+    // TODO:
     // 1. generate random RHO
     // 2. (?) secret share RHO between ALICE and BOB
     // 3. (fix->mult) ALPHA = RHO * m2
@@ -1517,12 +1517,40 @@ FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_va
     // 5. (locally) (RHO.share.get_native_type<float>()) / (ALPHA.share.get_native_type<float>())
     // 6. (?) assign the upper result as secret share respectively
 
+    std::mt19937 generator(0);
 
-    vector<FixArray> num_1_vec(1);
-    FixArray num_1_fix = fix->input(x_m.party, y_m.size, (1<<(y_m.s-1)), false, y_m.ell + 2, y_m.s);
-    cout << "num_1_fix:\t" << num_1_fix << endl;
+    // rho: secret share a random rho_pub between 2 parties
+    FixArray num_1_1 = fix->input(y_m.party, y_m.size, (1<<(y_m.s-1)), false, y_m.ell + 2, y_m.s + 1);
+    FixArray rho_ = fix->input(x_m.party, x_m.size, (uint16_t)generator(), false, x_m.ell, x_m.s);
+    cout << "rho_:\t" << rho_ << endl;
+    FixArray rho = fix->mul(rho_, num_1_1);
+    rho = fix->truncate_reduce(rho, x_m.s);
+    rho = fix->reduce(rho, x_m.ell);
+    cout << "rho:\t" << rho << endl;
+    float rho_f = (rho.get_native_type<float>())[0];
+    cout << "rho_f:\t" << rho_f << endl;
+    FixArray rho_pub = fix->output(PUBLIC, rho);
+    cout << "rho_pub:\t" << rho_pub << endl;
+
+    // alpha_pub: rho*m2 and reconstruct
+    FixArray alpha = fix->mul(rho, y_m);
+    FixArray alpha_pub = fix->output(PUBLIC, alpha);
+    cout << "alpha_pub:\t" << alpha_pub << endl;
+    float alpha_pub_f = (alpha_pub.get_native_type<float>())[0];
+    cout << "alpha_pub_f:\t" << alpha_pub_f << endl;
+
+    // locally compute the div: beta = rho/(rho*m2)
+    float beta_f = rho_f/alpha_pub_f;
+    cout << "beta_f:\t" << beta_f << endl;
+
+    // TODO: reconstruct FixArray from float-share
+
+
+
+    FixArray num_1_2 = fix->input(y_m.party, y_m.size, (1<<(y_m.s-1)), false, y_m.ell + 2, y_m.s);
     cout << "m2:\t" << y_m << endl;
-    num_1_vec[0] = num_1_fix;
+    vector<FixArray> num_1_vec(1);
+    num_1_vec[0] = num_1_2;
     FixArray r = (quotient_mantissa(fix, num_1_vec, y_m, cheap_varient))[0];
     FixArray r_pub = fix->output(PUBLIC, r);
     cout << "r=1/m2:\t" << r_pub << endl;
