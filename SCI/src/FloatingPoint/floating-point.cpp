@@ -1438,6 +1438,8 @@ FPArray FPOp::lyc_div_seperated(const FPArray &x, const FPArray &y, bool cheap_v
 
     // 2
     FixArray q = fix->mul(r, x_m);
+    q = fix->truncate_reduce(q, y_m.s);
+    q = fix->reduce(q, y_m.ell);
     FixArray q_pub = fix->output(PUBLIC, q);
     cout << "q=m1*r:\t" << q_pub << endl;
 
@@ -1527,6 +1529,8 @@ FPArray FPOp::lyc_div_modified(const FPArray &x, const FPArray &y, bool cheap_va
 
     // 2
     FixArray q = fix->mul(r, x_m);
+    q = fix->truncate_reduce(q, y_m.s);
+    q = fix->reduce(q, y_m.ell);
     FixArray q_pub = fix->output(PUBLIC, q);
     cout << "q=m1*r:\t" << q_pub << endl;
 
